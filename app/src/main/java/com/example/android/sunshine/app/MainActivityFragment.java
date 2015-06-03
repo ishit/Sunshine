@@ -33,6 +33,7 @@ import java.util.List;
 
 public class MainActivityFragment extends Fragment {
 
+    public ArrayAdapter<String> forecastAdapter;
     public MainActivityFragment() {
     }
 
@@ -63,22 +64,15 @@ public class MainActivityFragment extends Fragment {
 
         View rootView = inflater.inflate(R.layout.fragment_main, container);
         String[] data = {
-                "Mon 6/23 - Sunny - 31/17",
-                "Tue 6/24 - Foggy - 21/8",
-                "Wed 6/25 - Cloudy - 22/17",
-                "Thurs 6/26 - Rainy - 18/11",
-                "Fri 6/27 - Foggy - 21/10",
-                "Sat 6/28 - TRAPPED IN WEATHERSTATION - 23/18",
-                "Sun 6/29 - Sunny - 20/7"
         };
 
         List<String> weekForecast = new ArrayList<String>(Arrays.asList(data));
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(),
+        forecastAdapter = new ArrayAdapter<String>(getActivity(),
                 R.layout.list_item_forecast, R.id.list_item_forecast_textview, weekForecast);
 
         ListView listView1 = (ListView) rootView.findViewById(R.id.listview_forecast);
-        listView1.setAdapter(adapter);
+        listView1.setAdapter(forecastAdapter);
         return rootView;
     }
 
@@ -105,13 +99,6 @@ public class MainActivityFragment extends Fragment {
             return highLowStr;
         }
 
-        /**
-         * Take the String representing the complete forecast in JSON Format and
-         * pull out the data we need to construct the Strings needed for the wireframes.
-         * <p/>
-         * Fortunately parsing is easy:  constructor takes the JSON string and converts it
-         * into an Object hierarchy for us.
-         */
         private String[] getWeatherDataFromJson(String forecastJsonStr, int numDays)
                 throws JSONException {
 
@@ -125,14 +112,6 @@ public class MainActivityFragment extends Fragment {
 
             JSONObject forecastJson = new JSONObject(forecastJsonStr);
             JSONArray weatherArray = forecastJson.getJSONArray(OWM_LIST);
-
-            // OWM returns daily forecasts based upon the local time of the city that is being
-            // asked for, which means that we need to know the GMT offset to translate this data
-            // properly.
-
-            // Since this data is also sent in-order and the first day is always the
-            // current day, we're going to take advantage of that to get a nice
-            // normalized UTC date for all of our weather.
 
             Time dayTime = new Time();
             dayTime.setToNow();
@@ -183,6 +162,15 @@ public class MainActivityFragment extends Fragment {
         }
 
         @Override
+        protected void onPostExecute(String[] result) {
+            if (result != null) {
+                forecastAdapter.clear();
+                for (String daywise : result)
+                    forecastAdapter.add(daywise);
+            }
+        }
+
+        @Override
         protected String[] doInBackground(Integer... zip) {
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
@@ -228,11 +216,10 @@ public class MainActivityFragment extends Fragment {
                 forecastJsonStr = buffer.toString();
                 try {
                     String[] weatherData = getWeatherDataFromJson(forecastJsonStr, 7);
-                    Log.v(LOG_TAG, weatherData[0]);
                     return weatherData;
 
                 } catch (JSONException e) {
-                    Log.e(LOG_TAG, "Error in parsing JSON");
+                    Log.e(LOG_TAG, "Error in parsing JSON string");
                     return null;
                 }
             } catch (IOException e) {
