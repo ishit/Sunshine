@@ -1,5 +1,6 @@
 package com.example.android.sunshine.app;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -15,7 +16,6 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -36,12 +36,14 @@ import java.util.List;
 public class MainActivityFragment extends Fragment {
 
     public ArrayAdapter<String> forecastAdapter;
+
     public MainActivityFragment() {
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        new FetchWeatherTask().execute(94043);
         setHasOptionsMenu(true);
     }
 
@@ -79,9 +81,9 @@ public class MainActivityFragment extends Fragment {
         listView1.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                CharSequence text = forecastAdapter.getItem(position);
-                Toast toast = Toast.makeText(getActivity().getApplicationContext(), text, Toast.LENGTH_SHORT);
-                toast.show();
+                Intent intent = new Intent(getActivity(), DetailActivity.class)
+                        .putExtra(Intent.EXTRA_TEXT, forecastAdapter.getItem(position));
+                startActivity(intent);
             }
         });
         return rootView;
@@ -176,8 +178,7 @@ public class MainActivityFragment extends Fragment {
         protected void onPostExecute(String[] result) {
             if (result != null) {
                 forecastAdapter.clear();
-                for (String daywise : result)
-                    forecastAdapter.add(daywise);
+                for (String daywise : result) forecastAdapter.add(daywise);
             }
         }
 
